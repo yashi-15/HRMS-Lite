@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import './App.css'
 import AddPopUp from './components/AddPopUp';
+import ConfirmPopUp from './components/ConfirmDelete';
+import AttendancePopUp from './components/AttendancePopUp';
 
 function App() {
   const initialEmployees = [
@@ -43,6 +45,8 @@ function App() {
 
   const [employees, setEmployees] = useState(initialEmployees);
   const [addEmployee, setAddEmployee] = useState(false);
+  const [showAttendancePopup, setShowAttendancePopup] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
 
   const handleOnSubmit = (employeeData) => {
@@ -68,16 +72,25 @@ function App() {
   };
 
   const handleMarkAttendance = () => {
+    setShowAttendancePopup(true);
+  };
+
+  const handleAttendanceSubmit = (attendanceData) => {
     console.log('Marking attendance for:', selectedEmployees);
+    console.log('Attendance data:', attendanceData);
     // Add your attendance logic here
-    alert(`Attendance marked for ${selectedEmployees.length} employee(s)`);
+    alert(`Attendance marked as ${attendanceData.status} on ${attendanceData.date} for ${selectedEmployees.length} employee(s)`);
+    setSelectedEmployees([]);
   };
 
   const handleDeleteEmployees = () => {
-    if (window.confirm(`Are you sure you want to delete ${selectedEmployees.length} employee(s)?`)) {
-      setEmployees(employees.filter(emp => !selectedEmployees.includes(emp.employeeId)));
-      setSelectedEmployees([]);
-    }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    setEmployees(employees.filter(emp => !selectedEmployees.includes(emp.employeeId)));
+    setSelectedEmployees([]);
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -166,6 +179,21 @@ function App() {
       </div>
 
       {addEmployee && <AddPopUp onClose={() => setAddEmployee(false)} onSubmit={handleOnSubmit} />}
+      {showAttendancePopup && (
+        <AttendancePopUp
+          onClose={() => setShowAttendancePopup(false)} 
+          onSubmit={handleAttendanceSubmit}
+          selectedCount={selectedEmployees.length}
+        />
+      )}
+      {showDeleteConfirm && (
+        <ConfirmPopUp
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={confirmDelete}
+          title="Confirm Delete"
+          message={`Are you sure you want to delete ${selectedEmployees.length} employee${selectedEmployees.length > 1 ? 's' : ''}?`}
+        />
+      )}
     </div>
   )
 }
