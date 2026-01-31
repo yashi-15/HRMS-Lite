@@ -36,8 +36,7 @@ function EmployeeAttendanceView({ employee, attendanceRecords, onClose }) {
                 Attendance Record
               </h2>
               <div className="text-gray-300">
-                <p className="font-semibold text-lg">{employee.name}</p>
-                <p className="text-sm">Employee ID: {employee.employeeId}</p>
+                <p className="font-semibold text-lg">{employee.name} - {employee.employeeId}</p>
                 <p className="text-sm">{employee.designation} - {employee.department}</p>
               </div>
             </div>
@@ -72,11 +71,8 @@ function EmployeeAttendanceView({ employee, attendanceRecords, onClose }) {
         </div>
 
         <div className="p-4 bg-zinc-600 border-b border-zinc-500">
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-pink-200 text-sm font-semibold mb-2">
-                Filter by Month
-              </label>
+          <div className="flex gap-4 justify-end">
+            <div className="">
               <select
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
@@ -97,10 +93,7 @@ function EmployeeAttendanceView({ employee, attendanceRecords, onClose }) {
                 <option value="11">December</option>
               </select>
             </div>
-            <div className="flex-1">
-              <label className="block text-pink-200 text-sm font-semibold mb-2">
-                Filter by Status
-              </label>
+            <div className="">
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -172,15 +165,6 @@ function EmployeeAttendanceView({ employee, attendanceRecords, onClose }) {
               </p>
             </div>
           )}
-        </div>
-
-        <div className="p-4 bg-zinc-600 border-t border-zinc-500">
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold transition-colors"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>

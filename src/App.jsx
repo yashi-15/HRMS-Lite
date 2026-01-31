@@ -1,59 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css'
 import AddPopUp from './components/AddPopUp';
 import EmployeeAttendanceView from './components/EmployeeAttendanceView';
 import ConfirmDelete from './components/ConfirmDelete';
 import AttendancePopUp from './components/AttendancePopUp';
+import { employeeAPI, attendanceAPI } from './services/api';
 
 function App() {
-  const initialEmployees = [
-    {
-      employeeId: "EMP001",
-      name: "Amit Sharma",
-      email: "amit.sharma@gmail.com",
-      designation: "Software Engineer",
-      department: "IT",
-    },
-    {
-      employeeId: "EMP002",
-      name: "Priya Verma",
-      email: "pri.verma@gmail.com",
-      designation: "HR Manager",
-      department: "Human Resources",
-    },
-    {
-      employeeId: "EMP003",
-      name: "Rohit Singh",
-      email: "singhrohit4@gmail.com",
-      designation: "Business Analyst",
-      department: "Operations",
-    },
-    {
-      employeeId: "EMP004",
-      name: "Sneha Kapoor",
-      email: "sneha122@gmail.com",
-      designation: "UI/UX Designer",
-      department: "Design",
-    },
-    {
-      employeeId: "EMP005",
-      name: "Vikram Mehta",
-      email: "v.mehta12@gmail.com",
-      designation: "Project Manager",
-      department: "Management",
-    }
-  ];
-
-  const [employees, setEmployees] = useState(initialEmployees);
+  const [employees, setEmployees] = useState([]);
   const [addEmployee, setAddEmployee] = useState(false);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
-  const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [selectedEmployeeForView, setSelectedEmployeeForView] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleOnSubmit = (employeeData) => {
-    setEmployees([...employees, employeeData]);
+  // Load employees
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await employeeAPI.getAll(true);
+      setEmployees(data);
+    } catch (err) {
+      setError('Failed to load employees. Make sure the backend is running.');
+      console.error('Error loading employees:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOnSubmit = async (employeeData) => {
+    try {
+      await employeeAPI.create(employeeData);
+      await fetchEmployees();
+      setAddEmployee(false);
+      alert('Employee added successfully!');
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || 'Failed to add employee';
+      alert(errorMessage);
+    }
   };
 
   const handleSelectEmployee = (employeeId) => {
@@ -78,36 +69,77 @@ function App() {
     setShowAttendancePopup(true);
   };
 
-  const handleAttendanceSubmit = (attendanceData) => {
-    console.log('Marking attendance for:', selectedEmployees);
-    console.log('Attendance data:', attendanceData);
-    
-    // Create attendance records for each selected employee
-    const newRecords = selectedEmployees.map(employeeId => ({
-      employeeId,
-      date: attendanceData.date,
-      status: attendanceData.status,
-      timestamp: new Date().toISOString()
-    }));
-    
-    setAttendanceRecords([...attendanceRecords, ...newRecords]);
-    alert(`Attendance marked as ${attendanceData.status} on ${attendanceData.date} for ${selectedEmployees.length} employee(s)`);
-    setSelectedEmployees([]);
+  const handleAttendanceSubmit = async (attendanceData) => {
+    try {
+      await attendanceAPI.markBulk({
+        employeeIds: selectedEmployees,
+        date: attendanceData.date,
+        status: attendanceData.status,
+        markedBy: 'admin',
+      });
+      
+      alert(`Attendance marked as ${attendanceData.status} on ${attendanceData.date} for ${selectedEmployees.length} employee(s)`);
+      setSelectedEmployees([]);
+      setShowAttendancePopup(false);
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || 'Failed to mark attendance';
+      alert(errorMessage);
+    }
   };
 
   const handleDeleteEmployees = () => {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    setEmployees(employees.filter(emp => !selectedEmployees.includes(emp.employeeId)));
-    setSelectedEmployees([]);
-    setShowDeleteConfirm(false);
+  const confirmDelete = async () => {
+    try {
+      await Promise.all(
+        selectedEmployees.map(empId => employeeAPI.delete(empId, false))
+      );
+      
+      await fetchEmployees();
+      setSelectedEmployees([]);
+      setShowDeleteConfirm(false);
+      alert('Employees deleted successfully!');
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || 'Failed to delete employees';
+      alert(errorMessage);
+    }
   };
 
-  const handleEmployeeNameClick = (employee) => {
-    setSelectedEmployeeForView(employee);
+  const handleEmployeeNameClick = async (employee) => {
+    try {
+      const records = await attendanceAPI.getByEmployee(employee.employeeId);
+      setSelectedEmployeeForView({ employee, attendanceRecords: records });
+    } catch (err) {
+      console.error('Error fetching attendance records:', err);
+      alert('Failed to load attendance records');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className='bg-zinc-800 min-h-screen flex items-center justify-center'>
+        <div className='text-pink-200 text-xl'>Loading employees...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className='bg-zinc-800 min-h-screen flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='text-red-400 text-xl mb-4'>{error}</div>
+          <button 
+            onClick={fetchEmployees}
+            className='bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded text-white font-semibold'
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='bg-zinc-800 min-h-screen'>
@@ -119,7 +151,6 @@ function App() {
             <span className='text-pink-200 font-medium self-center'>
               {selectedEmployees.length} selected
             </span>
-
           </div>
         ) : (
           <div></div>
@@ -146,7 +177,6 @@ function App() {
             Add New Employee
           </button>
         </div>
-
       </div>
 
       <div className="overflow-x-auto mx-4">
@@ -219,8 +249,8 @@ function App() {
       )}
       {selectedEmployeeForView && (
         <EmployeeAttendanceView
-          employee={selectedEmployeeForView}
-          attendanceRecords={attendanceRecords}
+          employee={selectedEmployeeForView.employee}
+          attendanceRecords={selectedEmployeeForView.attendanceRecords}
           onClose={() => setSelectedEmployeeForView(null)}
         />
       )}
