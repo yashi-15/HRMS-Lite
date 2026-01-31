@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import './App.css'
 import AddPopUp from './components/AddPopUp';
-import ConfirmPopUp from './components/ConfirmDelete';
+import EmployeeAttendanceView from './components/EmployeeAttendanceView';
+import ConfirmDelete from './components/ConfirmDelete';
 import AttendancePopUp from './components/AttendancePopUp';
 
 function App() {
@@ -48,6 +49,8 @@ function App() {
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [selectedEmployeeForView, setSelectedEmployeeForView] = useState(null);
 
   const handleOnSubmit = (employeeData) => {
     setEmployees([...employees, employeeData]);
@@ -78,7 +81,16 @@ function App() {
   const handleAttendanceSubmit = (attendanceData) => {
     console.log('Marking attendance for:', selectedEmployees);
     console.log('Attendance data:', attendanceData);
-    // Add your attendance logic here
+    
+    // Create attendance records for each selected employee
+    const newRecords = selectedEmployees.map(employeeId => ({
+      employeeId,
+      date: attendanceData.date,
+      status: attendanceData.status,
+      timestamp: new Date().toISOString()
+    }));
+    
+    setAttendanceRecords([...attendanceRecords, ...newRecords]);
     alert(`Attendance marked as ${attendanceData.status} on ${attendanceData.date} for ${selectedEmployees.length} employee(s)`);
     setSelectedEmployees([]);
   };
@@ -91,6 +103,10 @@ function App() {
     setEmployees(employees.filter(emp => !selectedEmployees.includes(emp.employeeId)));
     setSelectedEmployees([]);
     setShowDeleteConfirm(false);
+  };
+
+  const handleEmployeeNameClick = (employee) => {
+    setSelectedEmployeeForView(employee);
   };
 
   return (
@@ -168,7 +184,14 @@ function App() {
                   />
                 </td>
                 <td className="px-4 py-2 text-sm text-gray-300">{emp.employeeId}</td>
-                <td className="px-4 py-2 text-sm text-gray-300">{emp.name}</td>
+                <td className="px-4 py-2 text-sm text-gray-300">
+                  <button
+                    onClick={() => handleEmployeeNameClick(emp)}
+                    className="text-purple-400 hover:text-purple-300 hover:underline transition-colors font-medium"
+                  >
+                    {emp.name}
+                  </button>
+                </td>
                 <td className="px-4 py-2 text-sm text-gray-300">{emp.email}</td>
                 <td className="px-4 py-2 text-sm text-gray-300">{emp.designation}</td>
                 <td className="px-4 py-2 text-sm text-gray-300">{emp.department}</td>
@@ -187,11 +210,18 @@ function App() {
         />
       )}
       {showDeleteConfirm && (
-        <ConfirmPopUp
+        <ConfirmDelete
           onClose={() => setShowDeleteConfirm(false)}
           onConfirm={confirmDelete}
           title="Confirm Delete"
-          message={`Are you sure you want to delete ${selectedEmployees.length} employee${selectedEmployees.length > 1 ? 's' : ''}?`}
+          message={`Are you sure you want to delete ${selectedEmployees.length} employee${selectedEmployees.length > 1 ? 's' : ''}? This action cannot be undone.`}
+        />
+      )}
+      {selectedEmployeeForView && (
+        <EmployeeAttendanceView
+          employee={selectedEmployeeForView}
+          attendanceRecords={attendanceRecords}
+          onClose={() => setSelectedEmployeeForView(null)}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-function ConfirmPopUp({ onClose, onConfirm, title, message }) {
+function ConfirmDelete({ onClose, onConfirm, title, message }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-zinc-700 rounded-lg p-6 w-96 border border-zinc-600">
@@ -28,4 +28,4 @@ function ConfirmPopUp({ onClose, onConfirm, title, message }) {
   );
 }
 
-export default ConfirmPopUp;
+export default ConfirmDelete;
